@@ -139,7 +139,7 @@
         <configuration>
           <allowTelemetry>false</allowTelemetry>
           <appName>${functionAppName}</appName>
-          <resourceGroup>nexfleet-estudante</resourceGroup>
+          <resourceGroup>rg-nexfleet-homolog</resourceGroup>
           <region>brazilsouth</region>
           <runtime>
             <os>linux</os>
