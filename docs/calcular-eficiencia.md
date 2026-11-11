@@ -9,6 +9,9 @@ acessa banco nem publica eventos.
   `x-functions-key` (ou na query `?code=`). Sem chave válida o runtime do Azure Functions
   responde `401` antes de executar o código.
 - **Content-Type:** `application/json` na requisição e na resposta.
+- **Correlação (ADR 0021):** o cabeçalho `X-Correlation-ID` (UUID canônico) é lido, registrado
+  nos logs (`correlationId=`) e devolvido na resposta, inclusive em `400`. Ausente ou inválido, a
+  Function gera um UUID novo.
 
 ## Requisição
 
