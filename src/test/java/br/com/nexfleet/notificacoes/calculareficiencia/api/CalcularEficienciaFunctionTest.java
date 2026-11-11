@@ -93,9 +93,9 @@ class CalcularEficienciaFunctionTest {
   }
 
   @Test
-  void respondeBadRequestAcimaDeMilItens() {
+  void respondeBadRequestAcimaDeDezMilItens() {
     var manutencoes = new StringBuilder();
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 10_000; i++) {
       manutencoes.append(i == 0 ? "" : ",").append("{\"valor\":1}");
     }
     String corpo = """

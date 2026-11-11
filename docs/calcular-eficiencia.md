@@ -50,7 +50,7 @@ acessa banco nem publica eventos.
 | `litros`, `valor` | número ≥ 0 | obrigatório |
 | `quilometragem` | inteiro ≥ 0 | obrigatório (decimal é rejeitado) |
 
-Limite: no máximo **1.000 itens** por requisição, contando veículos + abastecimentos + manutenções.
+Limite: no máximo **10.000 itens** por requisição, contando veículos + abastecimentos + manutenções (o BFF envia até 4.000 abastecimentos e 4.000 manutenções).
 Campos desconhecidos são ignorados.
 
 ## Resposta `200`
@@ -118,7 +118,7 @@ calculados sobre as somas sem arredondar.
 
 | Status | Quando | Corpo |
 |---|---|---|
-| `400` | JSON malformado, corpo ausente, tipo inválido, campo obrigatório ausente, número negativo, mais de 1.000 itens | `{ "erro": "<motivo>" }` |
+| `400` | JSON malformado, corpo ausente, tipo inválido, campo obrigatório ausente, número negativo, mais de 10.000 itens | `{ "erro": "<motivo>" }` |
 | `401` | sem chave da função ou chave inválida (runtime do Azure Functions) | definido pelo runtime |
 
 Nenhum cálculo é feito quando a resposta é `400`.
