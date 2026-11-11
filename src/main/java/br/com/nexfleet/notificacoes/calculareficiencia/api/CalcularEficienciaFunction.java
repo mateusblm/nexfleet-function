@@ -27,9 +27,12 @@ import java.util.UUID;
 /**
  * Gatilho HTTP sem estado {@code POST /api/calcular-eficiencia}. A chave da função
  * ({@code authLevel = FUNCTION}) é verificada pelo runtime, que responde 401 sem ela.
- * Contrato em {@code docs/calcular-eficiencia.md}.
+ * Contrato em {@code docs/calcular-eficiencia.md}. Lê {@code X-Correlation-ID} (só UUID canônico;
+ * ausente ou inválido vira um UUID novo), registra-o nos logs e o devolve na resposta (ADR 0021).
  */
 public final class CalcularEficienciaFunction {
+  static final String CORRELATION_HEADER = "X-Correlation-ID";
+
   private record AbastecimentoJson(Instant data, BigDecimal litros, BigDecimal valor, Long quilometragem) {}
 
   private record ManutencaoJson(BigDecimal valor) {}
@@ -62,18 +65,43 @@ public final class CalcularEficienciaFunction {
           authLevel = AuthorizationLevel.FUNCTION,
           route = "calcular-eficiencia") HttpRequestMessage<Optional<String>> requisicao,
       ExecutionContext contexto) {
+    String correlationId = correlationId(requisicao.getHeaders());
     try {
       Corpo corpo = json.readValue(requisicao.getBody().orElse(""), Corpo.class);
       if (corpo == null) {
         throw new EntradaInvalidaException("Corpo ausente.");
       }
       var resultado = casoDeUso.executar(paraDominio(corpo));
-      contexto.getLogger().info("calcular_eficiencia result=ok veiculos=" + resultado.veiculos().size());
-      return responder(requisicao, HttpStatus.OK, resultado);
+      contexto.getLogger().info("calcular_eficiencia result=ok correlationId=" + correlationId
+          + " veiculos=" + resultado.veiculos().size());
+      return responder(requisicao, HttpStatus.OK, resultado, correlationId);
     } catch (EntradaInvalidaException invalida) {
-      return rejeitar(requisicao, contexto, invalida.getMessage());
+      return rejeitar(requisicao, contexto, invalida.getMessage(), correlationId);
     } catch (JsonProcessingException malformado) {
-      return rejeitar(requisicao, contexto, "JSON malformado ou com tipos inválidos.");
+      return rejeitar(
+          requisicao, contexto, "JSON malformado ou com tipos inválidos.", correlationId);
+    }
+  }
+
+  /** O worker Java pode entregar o nome do cabeçalho em minúsculas; a busca ignora a caixa. */
+  static String correlationId(Map<String, String> cabecalhos) {
+    String valor = cabecalhos == null ? null : cabecalhos.entrySet().stream()
+        .filter(c -> CORRELATION_HEADER.equalsIgnoreCase(c.getKey()))
+        .map(Map.Entry::getValue)
+        .findFirst()
+        .orElse(null);
+    return uuidCanonico(valor).orElseGet(() -> UUID.randomUUID().toString());
+  }
+
+  private static Optional<String> uuidCanonico(String valor) {
+    if (valor == null || valor.length() != 36) {
+      return Optional.empty();
+    }
+    try {
+      String canonico = UUID.fromString(valor).toString();
+      return canonico.equalsIgnoreCase(valor) ? Optional.of(canonico) : Optional.empty();
+    } catch (IllegalArgumentException invalido) {
+      return Optional.empty();
     }
   }
 
@@ -101,16 +129,24 @@ public final class CalcularEficienciaFunction {
   }
 
   private HttpResponseMessage rejeitar(
-      HttpRequestMessage<Optional<String>> requisicao, ExecutionContext contexto, String motivo) {
-    contexto.getLogger().warning("calcular_eficiencia result=bad_request");
-    return responder(requisicao, HttpStatus.BAD_REQUEST, Map.of("erro", motivo));
+      HttpRequestMessage<Optional<String>> requisicao,
+      ExecutionContext contexto,
+      String motivo,
+      String correlationId) {
+    contexto.getLogger().warning(
+        "calcular_eficiencia result=bad_request correlationId=" + correlationId);
+    return responder(requisicao, HttpStatus.BAD_REQUEST, Map.of("erro", motivo), correlationId);
   }
 
   private HttpResponseMessage responder(
-      HttpRequestMessage<Optional<String>> requisicao, HttpStatus status, Object corpo) {
+      HttpRequestMessage<Optional<String>> requisicao,
+      HttpStatus status,
+      Object corpo,
+      String correlationId) {
     try {
       return requisicao.createResponseBuilder(status)
           .header("Content-Type", "application/json")
+          .header(CORRELATION_HEADER, correlationId)
           .body(json.writeValueAsString(corpo))
           .build();
     } catch (JsonProcessingException falha) {

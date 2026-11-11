@@ -56,21 +56,21 @@ class CalcularEficienciaValidacaoTest {
   }
 
   @Test
-  void aceitaExatamenteMilItensNoTotal() {
-    // 1 veículo + 600 abastecimentos + 399 manutenções = 1.000 itens
-    var veiculo = veiculo(600, 399);
+  void aceitaExatamenteDezMilItensNoTotal() {
+    // 1 veículo + 6.000 abastecimentos + 3.999 manutenções = 10.000 itens
+    var veiculo = veiculo(6000, 3999);
 
     assertThatCode(() -> casoDeUso.executar(List.of(veiculo))).doesNotThrowAnyException();
   }
 
   @Test
-  void rejeitaMaisDeMilItensSomandoVeiculosAbastecimentosEManutencoes() {
-    // 2 veículos + 2 * (300 abastecimentos + 200 manutenções) = 1.002 itens
-    var veiculos = List.of(veiculo(300, 200), veiculo(300, 200));
+  void rejeitaMaisDeDezMilItensSomandoVeiculosAbastecimentosEManutencoes() {
+    // 2 veículos + 2 * (3.000 abastecimentos + 2.000 manutenções) = 10.002 itens
+    var veiculos = List.of(veiculo(3000, 2000), veiculo(3000, 2000));
 
     assertThatThrownBy(() -> casoDeUso.executar(veiculos))
         .isInstanceOf(EntradaInvalidaException.class)
-        .hasMessageContaining("1000");
+        .hasMessageContaining("10000");
   }
 
   @Test

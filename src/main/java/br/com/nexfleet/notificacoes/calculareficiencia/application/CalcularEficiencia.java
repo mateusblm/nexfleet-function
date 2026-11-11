@@ -10,8 +10,11 @@ import java.util.Objects;
 
 /** Caso de uso sem estado: calcula a eficiência por veículo e da frota. */
 public final class CalcularEficiencia {
-  /** Teto de itens (veículos + abastecimentos + manutenções) por requisição. */
-  public static final int LIMITE_ITENS = 1000;
+  /**
+   * Teto de itens (veículos + abastecimentos + manutenções) por requisição; cobre os 4.000
+   * abastecimentos e 4.000 manutenções que o BFF lê, mais os veículos.
+   */
+  public static final int LIMITE_ITENS = 10_000;
 
   public record Resultado(List<EficienciaVeiculo> veiculos, EficienciaFrota frota) {}
 

@@ -93,9 +93,9 @@ class CalcularEficienciaFunctionTest {
   }
 
   @Test
-  void respondeBadRequestAcimaDeMilItens() {
+  void respondeBadRequestAcimaDeDezMilItens() {
     var manutencoes = new StringBuilder();
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 10_000; i++) {
       manutencoes.append(i == 0 ? "" : ",").append("{\"valor\":1}");
     }
     String corpo = """
@@ -118,6 +118,84 @@ class CalcularEficienciaFunctionTest {
     assertThat(gatilho.authLevel()).isEqualTo(AuthorizationLevel.FUNCTION);
     assertThat(gatilho.route()).isEqualTo("calcular-eficiencia");
     assertThat(gatilho.methods()).containsExactly(HttpMethod.POST);
+  }
+
+  private static final String CORPO_VALIDO = """
+      {"veiculos":[{"veiculoId":"%s","placa":"ABC1D23","abastecimentos":[],"manutencoes":[]}]}"""
+      .formatted(VEICULO_ID);
+
+  @Test
+  void devolveENaoTrocaOCorrelationIdRecebidoERegistraNosLogs() {
+    var correlation = "7d1f0a52-4c1e-4a43-9a51-2f5a3a3e9b10";
+    var logs = new java.util.ArrayList<String>();
+
+    // O worker Java entrega os nomes de cabeçalho em minúsculas.
+    var resposta = function.executar(
+        requisicao(CORPO_VALIDO, Map.of("x-correlation-id", correlation)), contexto(logs));
+
+    assertThat(resposta.getStatus()).isEqualTo(HttpStatus.OK);
+    assertThat(resposta.getHeader("X-Correlation-ID")).isEqualTo(correlation);
+    assertThat(logs).anySatisfy(linha -> assertThat(linha)
+        .contains("calcular_eficiencia")
+        .contains("correlationId=" + correlation));
+  }
+
+  @Test
+  void geraCorrelationIdQuandoAusenteTambemNaRejeicao() {
+    var logs = new java.util.ArrayList<String>();
+
+    var resposta = function.executar(requisicao("{", Map.of()), contexto(logs));
+
+    assertThat(resposta.getStatus()).isEqualTo(HttpStatus.BAD_REQUEST);
+    String gerado = resposta.getHeader("X-Correlation-ID");
+    assertThat(java.util.UUID.fromString(gerado).toString()).isEqualTo(gerado);
+    assertThat(logs).anySatisfy(linha -> assertThat(linha).contains("correlationId=" + gerado));
+  }
+
+  @Test
+  void substituiCorrelationIdQueNaoEUuidCanonico() {
+    var resposta = function.executar(
+        requisicao(CORPO_VALIDO, Map.of("X-Correlation-ID", "x\nlevel=ERROR forjado")),
+        contexto(new java.util.ArrayList<>()));
+
+    String devolvido = resposta.getHeader("X-Correlation-ID");
+    assertThat(devolvido).doesNotContain("forjado");
+    assertThat(java.util.UUID.fromString(devolvido).toString()).isEqualTo(devolvido);
+  }
+
+  private static HttpRequestMessage<Optional<String>> requisicao(
+      String corpo, Map<String, String> cabecalhos) {
+    var base = requisicao(corpo);
+    return new HttpRequestMessage<>() {
+      @Override public URI getUri() { return base.getUri(); }
+      @Override public HttpMethod getHttpMethod() { return base.getHttpMethod(); }
+      @Override public Map<String, String> getHeaders() { return cabecalhos; }
+      @Override public Map<String, String> getQueryParameters() { return Map.of(); }
+      @Override public Optional<String> getBody() { return base.getBody(); }
+      @Override public HttpResponseMessage.Builder createResponseBuilder(HttpStatus status) {
+        return base.createResponseBuilder(status);
+      }
+      @Override public HttpResponseMessage.Builder createResponseBuilder(HttpStatusType status) {
+        return base.createResponseBuilder(status);
+      }
+    };
+  }
+
+  private static ExecutionContext contexto(java.util.List<String> logs) {
+    Logger logger = Logger.getAnonymousLogger();
+    logger.setUseParentHandlers(false);
+    logger.addHandler(new java.util.logging.Handler() {
+      @Override public void publish(java.util.logging.LogRecord registro) {
+        logs.add(registro.getMessage());
+      }
+      @Override public void flush() {}
+      @Override public void close() {}
+    });
+    return new ExecutionContext() {
+      @Override public Logger getLogger() { return logger; }
+      @Override public String getInvocationId() { return "invocation-test"; }
+      @Override public String getFunctionName() { return "CalcularEficiencia"; }
+    };
   }
 
   private static HttpRequestMessage<Optional<String>> requisicao(String corpo) {
