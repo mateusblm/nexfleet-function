@@ -42,6 +42,20 @@ class NotificarAbastecimentoFunctionTest {
     assertThat(mensagens.toString()).contains("correlationId=" + eventoId);
   }
 
+  @Test
+  void aceitaCamposNovosDoEventoComoVersao() {
+    UUID eventoId = UUID.randomUUID();
+    var mensagens = new StringBuilder();
+    String comVersao = evento(eventoId, null)
+        .replaceFirst("}$", ",\"versao\":1,\"campoFuturo\":\"x\"}");
+
+    function().executar(comVersao, contexto(mensagens));
+
+    assertThat(mensagens.toString())
+        .contains("eventId=" + eventoId)
+        .contains("result=");
+  }
+
   private NotificarAbastecimentoFunction function() {
     var caso = new NotificarAbastecimento(
         email -> true,
