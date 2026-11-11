@@ -55,7 +55,7 @@ Pacote técnico: `config` (composição das dependências).
 docker build -t mateusblm/nexfleet-function:local .     # imagem para execução local (porta 80)
 ```
 
-Na Azure a Function é implantada por pacote (`azure-functions:deploy`), não por imagem.
+Na Azure a Function é implantada por pacote zip (OneDeploy), não por imagem.
 
 Variáveis de ambiente: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `EMAIL_PROVIDER` (`azure-communication` na nuvem; padrão captura local), `AZURE_COMMUNICATION_EMAIL_ENDPOINT`, `EMAIL_SENDER_ADDRESS`, `EMAIL_RECIPIENT_ADDRESS`, `NexFleetServiceBus__fullyQualifiedNamespace` (Service Bus, com identidade gerenciada), `RabbitMqConnection` (local), `AzureWebJobsStorage` e `FUNCTIONS_WORKER_RUNTIME=java`. No Compose do guarda-chuva, `EFICIENCIA_FUNCTION_KEY` e `FUNCTION_MASTER_KEY` definem as chaves locais.
 
@@ -73,7 +73,7 @@ Sem o override `compose.build.yaml`, o `docker compose up -d` usa as imagens pub
 
 A Function não tem URL de uso público: roda na Function App `func-nexfleet-homolog-ukzjodf42myfe`, não é exposta pelo APIM e só o BFF a chama, com a chave da função. O resultado aparece em `/aggregated-data` (campo `eficiencia`).
 
-Imagem Docker: o CI publica `mateusblm/nexfleet-function` ao criar tag `v*`, só para execução local; na nuvem não se usa imagem.
+Imagem Docker (só para execução local): [`mateusblm/nexfleet-function:v1.0.0`](https://hub.docker.com/r/mateusblm/nexfleet-function), publicada também pelo CI em tag `v*`; na nuvem não se usa imagem.
 
 | Recurso | Endereço |
 |---|---|
