@@ -1,6 +1,6 @@
 # NexFleet — Azure Function
 
-Componente serverless do NexFleet, plataforma acadêmica de gestão de frotas (PJBL, PUCPR). Parte da v1.0.0; o sistema completo está no repositório guarda-chuva [nexfleet](https://github.com/mateusblm/nexfleet).
+Componente serverless do NexFleet, plataforma de gestão de frotas. Parte da v1.0.0; o sistema completo está no repositório guarda-chuva [nexfleet](https://github.com/mateusblm/nexfleet).
 
 ## Arquitetura
 
@@ -86,7 +86,7 @@ Imagem Docker (só para execução local): [`mateusblm/nexfleet-function:v1.0.0`
 
 > **Partida a frio:** os Container Apps escalam a zero e o Azure SQL pausa sem uso. A primeira chamada após um período de inatividade pode levar de 1 a 2 minutos (ou responder 503/504); tente de novo em seguida.
 
-## Alunos
+## Equipe
 
 - Vinícius dos Reis Góes
 - Mateus Burlamaqui
