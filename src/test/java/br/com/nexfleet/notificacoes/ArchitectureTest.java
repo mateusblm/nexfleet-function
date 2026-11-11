@@ -22,6 +22,15 @@ class ArchitectureTest {
   }
 
   @Test
+  void dominioNaoDependeDeFrameworkNemDeOutrasCamadas() {
+    noClasses().that().resideInAPackage("..domain..")
+        .should().dependOnClassesThat().resideInAnyPackage(
+            "com.microsoft..", "com.fasterxml..", "com.zaxxer..", "org.flywaydb..",
+            "java.sql..", "..application..", "..infrastructure..", "..api..", "..config..")
+        .check(classes);
+  }
+
+  @Test
   void entradaNaoAcessaPersistenciaDiretamente() {
     noClasses().that().resideInAPackage("..api..")
         .should().dependOnClassesThat().resideInAnyPackage(
