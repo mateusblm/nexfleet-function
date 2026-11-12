@@ -2,6 +2,7 @@ package br.com.nexfleet.notificacoes.notificarabastecimento.api;
 
 import br.com.nexfleet.notificacoes.config.CompositionRoot;
 import br.com.nexfleet.notificacoes.notificarabastecimento.application.NotificarAbastecimento;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
@@ -11,6 +12,8 @@ import java.time.Instant;
 import java.util.UUID;
 
 public final class NotificarAbastecimentoFunction {
+  // Leitor tolerante: o contrato evolui de forma aditiva (ex.: versao na v1.1.0).
+  @JsonIgnoreProperties(ignoreUnknown = true)
   private record Payload(
       UUID eventoId,
       UUID abastecimentoId,
